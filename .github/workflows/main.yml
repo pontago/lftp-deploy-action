@@ -1,0 +1,25 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  ci:
+    name: upload-action
+    runs-on: ubuntu-latest
+    steps:
+      - name: lftp Upload Test
+        uses: ./
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          protocol: ${{ vars.PROTOCOL }}
+          local_dir: ${{ vars.LOCAL_DIR }}
+          remote_dir: ${{ vars.REMOTE_DIR }}
+          dry_run: ${{ vars.DRY_RUN }}
+          debug: ${{ vars.DEBUG_MODE }}
+          script: |
+            ls
+            pwd

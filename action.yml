@@ -1,0 +1,53 @@
+name: "FTP Deploy Action via lftp (FTP, SFTP, and FTPS)"
+description: "Deploy files via lftp. Supports FTP, SFTP, and FTPS."
+branding:
+  icon: "upload-cloud"
+  color: "yellow"
+inputs:
+  host:
+    description: "Sever Hostname or IP"
+    required: true
+    default: ""
+  username:
+    description: "Login Username"
+    required: true
+    default: ""
+  password:
+    description: "Login Password"
+    required: false
+    default: ""
+  port:
+    description: "Server Port"
+    required: false
+    default: "21"
+  protocol:
+    description: "FTP Protocol (ftp, ftps, sftp)"
+    required: false
+    default: "ftp"
+  ssh_private_key:
+    description: "If you want to use SSH Private Key, connecting with SFTP"
+    required: false
+    default: ""
+  local_dir:
+    description: "Local Directory"
+    required: false
+    default: ""
+  remote_dir:
+    description: "Remote Directory"
+    required: false
+    default: ""
+  script:
+    description: "lftp Script"
+    required: false
+    default: ""
+  dry_run:
+    description: "Dry Run"
+    required: false
+    default: false
+  debug:
+    description: "Debug Mode. Print lftp output"
+    required: false
+    default: false
+runs:
+  using: "docker"
+  image: "Dockerfile"
