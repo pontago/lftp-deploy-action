@@ -9,6 +9,8 @@ jobs:
     name: FTP Test
     runs-on: ubuntu-latest
     steps:
+      - name: checkout
+        uses: actions/checkout@v4
       - name: create ftp server
         run: |
           docker run -d \
@@ -44,6 +46,8 @@ jobs:
     name: FTPS Test
     runs-on: ubuntu-latest
     steps:
+      - name: checkout
+        uses: actions/checkout@v4
       - name: create ftps server
         run: |
           docker run -d \
@@ -80,6 +84,8 @@ jobs:
     name: SFTP Password Test
     runs-on: ubuntu-latest
     steps:
+      - name: checkout
+        uses: actions/checkout@v4
       - name: create sftp server
         run: |
           docker run -d \
@@ -114,6 +120,8 @@ jobs:
     name: SFTP SSH Key Test
     runs-on: ubuntu-latest
     steps:
+      - name: checkout
+        uses: actions/checkout@v4
       - name: create ssh key
         id: create-ssh-key
         run: |
