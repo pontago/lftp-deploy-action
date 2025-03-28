@@ -1,5 +1,5 @@
-name: "FTP Deploy Action via lftp (FTP, SFTP, and FTPS)"
-description: "Deploy files via lftp. Supports FTP, SFTP, and FTPS."
+name: "FTP Deploy Action via lftp (FTP, SFTP, FTPS)"
+description: "Supports FTP, FTPS, SFTP. and lftp commands."
 branding:
   icon: "upload-cloud"
   color: "yellow"
@@ -17,37 +17,53 @@ inputs:
     required: false
     default: ""
   port:
-    description: "Server Port"
+    description: "Default port are FTP(21), SFTP(22)."
     required: false
-    default: "21"
+    default: ""
   protocol:
-    description: "FTP Protocol (ftp, ftps, sftp)"
+    description: "Transfer protocol (ftp, ftps, sftp)"
     required: false
     default: "ftp"
   ssh_private_key:
-    description: "If you want to use SSH Private Key, connecting with SFTP"
+    description: "If you want to use SSH Private Key, protocol parameter should be sftp."
     required: false
     default: ""
+  verify_cert:
+    description: "If you want to no SSL verification, false. (FTPS)"
+    required: false
+    default: true
   local_dir:
-    description: "Local Directory"
+    description: "Upload source directory."
     required: false
     default: ""
   remote_dir:
-    description: "Remote Directory"
+    description: "Upload remote directory."
     required: false
     default: ""
+  create_remote_dir:
+    description: "If doesn't exists, create remote directory."
+    required: false
+    default: true
   script:
-    description: "lftp Script"
+    description: "Support lftp commands. If you input remote_dir and remote_dir, the script will be executed after mirror command."
     required: false
     default: ""
   dry_run:
-    description: "Dry Run"
+    description: "You can check the operation. Not upload and create remote directory."
     required: false
     default: false
   debug:
-    description: "Debug Mode. Print lftp output"
+    description: "Debug mode. Output lftp log and upload verbose."
     required: false
     default: false
+  timeout:
+    description: "Timeout in seconds."
+    required: false
+    default: "30"
+  max_retries:
+    description: "Max retries. 0 is unlimited. 1 means no retries."
+    required: false
+    default: "5"
 runs:
   using: "docker"
   image: "Dockerfile"

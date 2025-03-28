@@ -5,21 +5,155 @@ on:
       - master
 
 jobs:
-  ci:
-    name: upload-action
+  ftp-test:
+    name: FTP Test
     runs-on: ubuntu-latest
     steps:
-      - name: lftp Upload Test
+      - name: create ftp server
+        run: |
+          docker run -d \
+          --name ftp-server \
+          -p "10021:21" -p 21000-21010:21000-21010 \
+          -e USERS="user1|pass" \
+          -e MIN_PORT=21000 \
+          -e MAX_PORT=21010 \
+          --restart unless-stopped \
+          delfer/alpine-ftp-server
+      - name: ftp upload test
         uses: ./
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          protocol: ${{ vars.PROTOCOL }}
-          local_dir: ${{ vars.LOCAL_DIR }}
-          remote_dir: ${{ vars.REMOTE_DIR }}
-          dry_run: ${{ vars.DRY_RUN }}
-          debug: ${{ vars.DEBUG_MODE }}
+          debug: ${{ vars.DEBUG }}
+          host: 127.0.0.1
+          port: 10021
+          username: user1
+          password: pass
+          protocol: ftp
+          timeout: 10
+          max_retries: 3
           script: |
+            put README.md
             ls
             pwd
+      - name: cleanup
+        if: always()
+        run: |
+          docker stop ftp-server
+          docker rm ftp-server
+
+  ftps-test:
+    name: FTPS Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: create ftps server
+        run: |
+          docker run -d \
+          --name ftps-server \
+          -p "10121:21" -p 21100-21110:21100-21110 \
+          -e USERS="user1|pass" \
+          -e MIN_PORT=21100 \
+          -e MAX_PORT=21110 \
+          --restart unless-stopped \
+          quay.io/aminvakil/alpine-ftp-server-tls
+      - name: ftps upload test
+        uses: ./
+        with:
+          debug: ${{ vars.DEBUG }}
+          host: 127.0.0.1
+          port: 10121
+          username: user1
+          password: pass
+          protocol: ftps
+          verify_cert: false
+          timeout: 10
+          max_retries: 3
+          script: |
+            put README.md
+            ls
+            pwd
+      - name: cleanup
+        if: always()
+        run: |
+          docker stop ftps-server
+          docker rm ftps-server
+
+  sftp-pass-test:
+    name: SFTP Password Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: create sftp server
+        run: |
+          docker run -d \
+          --name sftp-pass-server \
+          -p "10022:22" \
+          --restart unless-stopped \
+          atmoz/sftp \
+          user1:pass:::upload
+      - name: ftps upload test
+        uses: ./
+        with:
+          debug: ${{ vars.DEBUG }}
+          host: 127.0.0.1
+          port: 10022
+          username: user1
+          password: pass
+          protocol: sftp
+          timeout: 10
+          max_retries: 3
+          script: |
+            cd upload
+            put README.md
+            ls 
+            pwd
+      - name: cleanup
+        if: always()
+        run: |
+          docker stop sftp-pass-server
+          docker rm sftp-pass-server
+
+  sftp-key-test:
+    name: SFTP SSH Key Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: create ssh key
+        id: create-ssh-key
+        run: |
+          {
+            echo 'SSH_PRIVATE_KEY<<EOF'
+            cat ./testdata/ssh/ssh_nopass_ed25519_key
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+      - name: create sftp server
+        run: |
+          docker run -d \
+          --name sftp-key-server \
+          -p "10122:22" \
+          -v ./testdata/ssh/ssh_nopass_ed25519_key.pub:/home/user1/.ssh/keys/id_ed25519.pub:ro \
+          --restart unless-stopped \
+          atmoz/sftp \
+          user1:pass:::upload
+      - name: ftps upload test
+        uses: ./
+        with:
+          debug: ${{ vars.DEBUG }}
+          host: 127.0.0.1
+          port: 10122
+          username: user1
+          protocol: sftp
+          ssh_private_key: ${{ steps.create-ssh-key.outputs.SSH_PRIVATE_KEY }}
+          timeout: 10
+          max_retries: 3
+          local_dir: ./testdata/upload-test
+          remote_dir: upload/
+          create_remote_dir: true
+          script: |
+            ls upload/
+            mirror --verbose upload/upload-test ./tmp/
+      - name: check download files
+        run: |
+          ls ./tmp/upload-test
+          diff -rq ./testdata/upload-test ./tmp/upload-test || exit 1
+      - name: cleanup
+        if: always()
+        run: |
+          docker stop sftp-key-server
+          docker rm sftp-key-server
