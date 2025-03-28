@@ -12,6 +12,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: create ftp server
+        id: create-ftp-server
         run: |
           docker run -d \
           --name ftp-server \
@@ -21,11 +22,16 @@ jobs:
           -e MAX_PORT=21010 \
           --restart unless-stopped \
           delfer/alpine-ftp-server
+          {
+            echo 'HOST<<EOF'
+            docker exec ftp-server sh -c "hostname -i"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
       - name: ftp upload test
         uses: ./
         with:
           debug: ${{ vars.DEBUG }}
-          host: 127.0.0.1
+          host: ${{ env.ACT && '127.0.0.1' || steps.create-ftp-server.outputs.HOST }}
           port: 10021
           username: user1
           password: pass
@@ -49,6 +55,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: create ftps server
+        id: create-ftps-server
         run: |
           docker run -d \
           --name ftps-server \
@@ -58,11 +65,16 @@ jobs:
           -e MAX_PORT=21110 \
           --restart unless-stopped \
           quay.io/aminvakil/alpine-ftp-server-tls
+          {
+            echo 'HOST<<EOF'
+            docker exec ftps-server sh -c "hostname -i"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
       - name: ftps upload test
         uses: ./
         with:
           debug: ${{ vars.DEBUG }}
-          host: 127.0.0.1
+          host: ${{ env.ACT && '127.0.0.1' || steps.create-ftps-server.outputs.HOST }}
           port: 10121
           username: user1
           password: pass
@@ -87,6 +99,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: create sftp server
+        id: create-sftp-server
         run: |
           docker run -d \
           --name sftp-pass-server \
@@ -94,11 +107,16 @@ jobs:
           --restart unless-stopped \
           atmoz/sftp \
           user1:pass:::upload
+          {
+            echo 'HOST<<EOF'
+            docker exec sftp-pass-server sh -c "hostname -i"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
       - name: ftps upload test
         uses: ./
         with:
           debug: ${{ vars.DEBUG }}
-          host: 127.0.0.1
+          host: ${{ env.ACT && '127.0.0.1' || steps.create-sftp-server.outputs.HOST }}
           port: 10022
           username: user1
           password: pass
@@ -131,6 +149,7 @@ jobs:
             echo EOF
           } >> "$GITHUB_OUTPUT"
       - name: create sftp server
+        id: create-sftp-server
         run: |
           docker run -d \
           --name sftp-key-server \
@@ -139,11 +158,16 @@ jobs:
           --restart unless-stopped \
           atmoz/sftp \
           user1:pass:::upload
+          {
+            echo 'HOST<<EOF'
+            docker exec sftp-key-server sh -c "hostname -i"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
       - name: ftps upload test
         uses: ./
         with:
           debug: ${{ vars.DEBUG }}
-          host: 127.0.0.1
+          host: ${{ env.ACT && '127.0.0.1' || steps.create-sftp-server.outputs.HOST }}
           port: 10122
           username: user1
           protocol: sftp
