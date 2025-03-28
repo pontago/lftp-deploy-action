@@ -12,28 +12,32 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
-      - name: create ftp server
-        id: create-ftp-server
+      - name: get host ip
+        id: get-host-ip
+        if: ${{ !env.ACT }}
         run: |
-          docker run -d \
-          --name ftp-server \
-          ${{ !env.ACT && '--network ftp-network' || '' }}
-          -p "10021:21" -p 21000-21010:21000-21010 \
-          -e USERS="user1|pass" \
-          -e MIN_PORT=21000 \
-          -e MAX_PORT=21010 \
-          --restart unless-stopped \
-          delfer/alpine-ftp-server
           {
             echo 'HOST<<EOF'
             ip -4 addr show docker0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
             echo EOF
           } >> "$GITHUB_OUTPUT"
+      - name: create ftp server
+        id: create-ftp-server
+        run: |
+          docker run -d \
+          --name ftp-server \
+          -p "10021:21" -p 21000-21010:21000-21010 \
+          -e USERS="user1|pass" \
+          -e ADDRESS=${{ env.ACT && '127.0.0.1' || steps.get-host-ip.outputs.HOST }} \
+          -e MIN_PORT=21000 \
+          -e MAX_PORT=21010 \
+          --restart unless-stopped \
+          delfer/alpine-ftp-server
       - name: ftp upload test
         uses: ./
         with:
           debug: ${{ vars.DEBUG }}
-          host: ${{ env.ACT && '127.0.0.1' || steps.create-ftp-server.outputs.HOST }}
+          host: ${{ env.ACT && '127.0.0.1' || steps.get-host-ip.outputs.HOST }}
           port: 10021
           username: user1
           password: pass
@@ -56,6 +60,15 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+      - name: get host ip
+        id: get-host-ip
+        if: ${{ !env.ACT }}
+        run: |
+          {
+            echo 'HOST<<EOF'
+            ip -4 addr show docker0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
       - name: create ftps server
         id: create-ftps-server
         run: |
@@ -63,20 +76,16 @@ jobs:
           --name ftps-server \
           -p "10121:21" -p 21100-21110:21100-21110 \
           -e USERS="user1|pass" \
+          -e ADDRESS=${{ env.ACT && '127.0.0.1' || steps.get-host-ip.outputs.HOST }} \
           -e MIN_PORT=21100 \
           -e MAX_PORT=21110 \
           --restart unless-stopped \
           quay.io/aminvakil/alpine-ftp-server-tls
-          {
-            echo 'HOST<<EOF'
-            ip -4 addr show docker0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
-            echo EOF
-          } >> "$GITHUB_OUTPUT"
       - name: ftps upload test
         uses: ./
         with:
           debug: ${{ vars.DEBUG }}
-          host: ${{ env.ACT && '127.0.0.1' || steps.create-ftps-server.outputs.HOST }}
+          host: ${{ env.ACT && '127.0.0.1' || steps.get-host-ip.outputs.HOST }}
           port: 10121
           username: user1
           password: pass
@@ -100,6 +109,15 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+      - name: get host ip
+        id: get-host-ip
+        if: ${{ !env.ACT }}
+        run: |
+          {
+            echo 'HOST<<EOF'
+            ip -4 addr show docker0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
       - name: create sftp server
         id: create-sftp-server
         run: |
@@ -109,16 +127,11 @@ jobs:
           --restart unless-stopped \
           atmoz/sftp \
           user1:pass:::upload
-          {
-            echo 'HOST<<EOF'
-            ip -4 addr show docker0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
-            echo EOF
-          } >> "$GITHUB_OUTPUT"
       - name: ftps upload test
         uses: ./
         with:
           debug: ${{ vars.DEBUG }}
-          host: ${{ env.ACT && '127.0.0.1' || steps.create-sftp-server.outputs.HOST }}
+          host: ${{ env.ACT && '127.0.0.1' || steps.get-host-ip.outputs.HOST }}
           port: 10022
           username: user1
           password: pass
@@ -142,6 +155,15 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+      - name: get host ip
+        id: get-host-ip
+        if: ${{ !env.ACT }}
+        run: |
+          {
+            echo 'HOST<<EOF'
+            ip -4 addr show docker0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
       - name: create ssh key
         id: create-ssh-key
         run: |
@@ -160,16 +182,11 @@ jobs:
           --restart unless-stopped \
           atmoz/sftp \
           user1:pass:::upload
-          {
-            echo 'HOST<<EOF'
-            ip -4 addr show docker0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
-            echo EOF
-          } >> "$GITHUB_OUTPUT"
       - name: ftps upload test
         uses: ./
         with:
           debug: ${{ vars.DEBUG }}
-          host: ${{ env.ACT && '127.0.0.1' || steps.create-sftp-server.outputs.HOST }}
+          host: ${{ env.ACT && '127.0.0.1' || steps.get-host-ip.outputs.HOST }}
           port: 10122
           username: user1
           protocol: sftp
