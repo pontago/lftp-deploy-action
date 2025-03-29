@@ -45,7 +45,7 @@ inputs:
     required: false
     default: true
   script:
-    description: "Support lftp commands. If you input remote_dir and remote_dir, the script will be executed after mirror command."
+    description: "Support lftp commands. If you input local_dir and remote_dir, the script will be executed after mirror command."
     required: false
     default: ""
   dry_run:
